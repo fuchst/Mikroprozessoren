@@ -43,9 +43,12 @@ static void toupper_optimised(char * text) {
     
     unsigned int textlen = strlen(text);
 
-    unsigned int i = 0;
+    unsigned int iterations = textlen / 16;
 
-    for(i; i < textlen / 16; i++)
+    printf("%d\n", iterations);
+
+    //#pragma omp parallel for schedule(static, iterations/2) 
+    for(int i = 0; i < iterations; i++)
     {
         void * address = (void*)text+(i*16);
         simddata = _mm_load_si128(address);
@@ -54,7 +57,7 @@ static void toupper_optimised(char * text) {
         _mm_maskmoveu_si128(simddata, compresult, address);
     }
 
-    toupper_simple((void*)text+i*16);
+    toupper_simple((void*)text+iterations*16);
 }
 
 static void toupper_optimised2(char * text) {
