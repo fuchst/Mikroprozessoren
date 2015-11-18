@@ -36,33 +36,29 @@ static void toupper_optimised(char * text) {
     __m128i compresult;
     __m128i subtractor;
 
-    comparator = _mm_set1_epi8(0x5A);
+    unsigned char lowerBound = 0x61;
+    unsigned char upperBound = 0x7A;
+
+    unsigned short bounds = (lowerBound << 8) | upperBound;
+    comparator = _mm_set1_epi16(bounds);
     subtractor = _mm_set1_epi8(0x20);
 
     //printf("%hx\n", bounds);
     
     unsigned int textlen = strlen(text);
 
-    unsigned int i = 0;
-
-    for(i; i < textlen / 16; i++)
+    for(int i = 0; i < textlen / 16; i++)
     {
         void * address = (void*)text+(i*16);
         simddata = _mm_load_si128(address);
-        compresult = _mm_cmpgt_epi8(simddata, comparator);
+        compresult = _mm_cmpistrm(simddata, comparator, _SIDD_SBYTE_OPS | _SIDD_CMP_RANGES);
         simddata = _mm_sub_epi8(simddata, subtractor);
         _mm_maskmoveu_si128(simddata, compresult, address);
     }
-
-    toupper_simple((void*)text+i*16);
 }
 
 static void toupper_optimised2(char * text) {
-    __asm__("nop\n\t"
-            : /* no output registers */
-            : "r" (text)
-            : /* no clobbered registers */
-           );
+
 }
 
 
@@ -139,7 +135,7 @@ struct _toupperversion {
 } toupperversion[] = {
     { "simple",    toupper_simple },
     { "optimised", toupper_optimised },
-    { "optimised2", toupper_optimised2 },
+    //{ "optimised2", toupper_optimised2 },
     { 0, 0 }
 };
 
