@@ -39,13 +39,9 @@ static void toupper_optimised(char * text) {
     comparator = _mm_set1_epi8(0x5A);
     subtractor = _mm_set1_epi8(0x20);
 
-    //printf("%hx\n", bounds);
-    
     unsigned int textlen = strlen(text);
 
     unsigned int iterations = textlen / 16;
-
-    printf("%d\n", iterations);
 
     //#pragma omp parallel for schedule(static, iterations/2) 
     for(int i = 0; i < iterations; i++)
@@ -61,10 +57,22 @@ static void toupper_optimised(char * text) {
 }
 
 static void toupper_optimised2(char * text) {
-    __asm__("nop\n\t"
+    __asm__ __volatile__ (
+            "movq $0, %%rsi\n\t"
+            "loop:\n\t"
+            "movb 0(%%rbx, %%rsi, 1), %%al\n\t"
+            "cmp $0, %%al\n\t"
+            "je end\n\t"
+            "inc %%rsi\n\t"
+            "cmp $0x5A, %%al\n\t"
+            "jl loop\n\t"
+            "sub $0x20, %%al\n\t"
+            "movb %%al, -1(%%rbx, %%rsi, 1)\n\t"
+            "jmp loop\n\t"
+            "end:\n\t"
             : /* no output registers */
-            : "r" (text)
-            : /* no clobbered registers */
+            : "b" (text)
+            : "al", "rsi"
            );
 }
 
