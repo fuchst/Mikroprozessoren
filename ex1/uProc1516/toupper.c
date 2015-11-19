@@ -58,21 +58,21 @@ static void toupper_optimised(char * text) {
 
 static void toupper_optimised2(char * text) {
     __asm__ __volatile__ (
-            "movq $0, %%rsi\n\t"
-            "loop:\n\t"
-            "movb 0(%%rbx, %%rsi, 1), %%al\n\t"
-            "cmp $0, %%al\n\t"
-            "je end\n\t"
-            "inc %%rsi\n\t"
-            "cmp $0x5A, %%al\n\t"
-            "jl loop\n\t"
-            "sub $0x20, %%al\n\t"
-            "movb %%al, -1(%%rbx, %%rsi, 1)\n\t"
+            "movq $0, %%rsi\n\t"                // init rsi with 0 (offset of address)
+            "loop:\n\t"                         
+            "movb 0(%%rbx, %%rsi, 1), %%al\n\t" // load value at rbx + (rsi * 1) - 0
+            "cmp $0, %%al\n\t"                  // check if string end is reached
+            "je end\n\t"                            
+            "inc %%rsi\n\t"                     // increment offset
+            "cmp $0x5A, %%al\n\t"               // compare letter case
+            "jl loop\n\t"                       
+            "sub $0x20, %%al\n\t"               // make large case
+            "movb %%al, -1(%%rbx, %%rsi, 1)\n\t"// store value
             "jmp loop\n\t"
             "end:\n\t"
-            : /* no output registers */
-            : "b" (text)
-            : "al", "rsi"
+            :               /* no output registers  */
+            : "b" (text)    /* input registers      */
+            : "al", "rsi"   /* clobbered registers  */
            );
 }
 
