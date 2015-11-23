@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <sys/time.h>
 #include <nmmintrin.h>
+#include <immintrin.h>
 #include "options.h"
 
 int debug = 0;
@@ -13,8 +14,6 @@ unsigned long   *sizes;
 struct timeval time;
 
 int no_sz = 1, no_ratio =1, no_version=1;
-
-
 
 static inline
 double gettime(void) {
@@ -29,8 +28,7 @@ static void toupper_simple(char * text) {
   }
 }
 
-
-static void toupper_optimised(char * text) {
+static void toupper_sse2(char * text) {
     __m128i simddata;
     __m128i comparator;
     __m128i compresult;
@@ -56,7 +54,35 @@ static void toupper_optimised(char * text) {
     toupper_simple((void*)text+iterations*16);
 }
 
-static void toupper_optimised2(char * text) {
+static void toupper_avx2(char * text) {
+    __m256i simddataOld;
+    __m256i simddataNew;
+    __m256i comparator;
+    __m256i compresult;
+    __m256i subtractor;
+
+    comparator = _mm256_set1_epi8(0x5A);
+    subtractor = _mm256_set1_epi8(0x20);
+
+    unsigned int textlen = strlen(text);
+
+    unsigned int iterations = textlen / 32;
+
+    //#pragma omp parallel for schedule(static, iterations/2) 
+    for(int i = 0; i < iterations; i++)
+    {
+        void * address = (void*)text+(i*32);
+        simddataOld = _mm256_load_si256(address);
+        compresult = _mm256_cmpgt_epi8(simddataOld, comparator);
+        simddataNew = _mm256_sub_epi8(simddataOld, subtractor);
+	simddataNew = _mm256_blendv_epi8(simddataOld, simddataNew, compresult);
+        _mm256_store_si256(address, simddataNew);
+    }
+
+    toupper_simple((void*)text+iterations*32);
+}
+
+static void toupper_asm(char * text) {
     __asm__ __volatile__ (
             "movq $0, %%rsi\n\t"                // init rsi with 0 (offset of address)
             "loop:\n\t"                         
@@ -149,8 +175,9 @@ struct _toupperversion {
     toupperfunc func;
 } toupperversion[] = {
     { "simple",    toupper_simple },
-    { "optimised", toupper_optimised },
-    { "optimised2", toupper_optimised2 },
+    { "sse2", toupper_sse2 },
+    { "avx2", toupper_avx2 },
+    { "asm", toupper_asm },
     { 0, 0 }
 };
 
