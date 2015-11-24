@@ -15,6 +15,8 @@ struct timeval time;
 
 int no_sz = 1, no_ratio =1, no_version=1;
 
+static const char lut[] = {65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90};
+
 static inline
 double gettime(void) {
 	gettimeofday(&time, NULL);
@@ -35,10 +37,10 @@ static char* buildLookupTable() {
 
 	char* table = (char*)malloc(58);	
 
-	for(int i = 64; i <= 90; i++)
-		table[i-64] = i;
+	for(int i = 65; i <= 90; i++)
+		table[i-65] = i;
 	for(int i = 97; i <= 122; i++)
-		table[i-64] = i-0x20;
+		table[i-65] = i-0x20;
 
 	return table;
 }
@@ -51,13 +53,9 @@ static void toupper_simple(char * text) {
 
 static void toupper_lookup(char * text) {
 
-	char* table = buildLookupTable();
-
 	for(int i = 0; text[i] != '\0'; i++) {
-		text[i] = table[text[i]-64];
+		text[i] = lut[text[i]-65];
 	}
-
-	free(table);
 }
 
 static void toupper_sse(char * text) {
@@ -85,7 +83,7 @@ static void toupper_sse(char * text) {
 		_mm_store_si128(address, simddataNew);
 	}
 
-	toupper_simple((void*)text+iterations*16);
+	toupper_lookup((void*)text+iterations*16);
 }
 
 static void toupper_avx(char * text) {
@@ -113,7 +111,7 @@ static void toupper_avx(char * text) {
 		_mm256_store_si256(address, simddataNew);
 	}
 
-	toupper_simple((void*)text+iterations*32);
+	toupper_lookup((void*)text+iterations*32);
 }
 
 static void toupper_asm(char * text) {
