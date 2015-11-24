@@ -62,6 +62,12 @@ static void toupper_lookup(char * text) {
 	free(table);
 }
 
+static void toupper_lookupConst(char * text) {
+	for(int i = 0; text[i] != '\0'; i++) {
+		text[i] = lut[text[i]-65];
+	}
+}
+
 static void toupper_sse(char * text) {
 	__m128i simddataOld;
 	__m128i simddataNew;
@@ -212,6 +218,7 @@ struct _toupperversion {
 } toupperversion[] = {
 	{ "simple",    toupper_simple },
 	{ "lookup", toupper_lookup },
+	{ "lookupConst", toupper_lookupConst },
 	{ "sse", toupper_sse },
 	{ "avx", toupper_avx },
 	{ "asm", toupper_asm },
