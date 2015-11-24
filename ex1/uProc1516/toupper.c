@@ -15,7 +15,7 @@ struct timeval time;
 
 int no_sz = 1, no_ratio =1, no_version=1;
 
-static const char lut[] = {65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90};
+const char lut[] = {65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90};
 
 static inline
 double gettime(void) {
@@ -53,9 +53,13 @@ static void toupper_simple(char * text) {
 
 static void toupper_lookup(char * text) {
 
+	char* table = buildLookupTable();
+
 	for(int i = 0; text[i] != '\0'; i++) {
-		text[i] = lut[text[i]-65];
+		text[i] = table[text[i]-65];
 	}
+
+	free(table);
 }
 
 static void toupper_sse(char * text) {
