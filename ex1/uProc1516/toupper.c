@@ -31,10 +31,33 @@ static int checkTypeCase(char * text) {
 	return count;
 }
 
+static char* buildLookupTable() {
+
+	char* table = (char*)malloc(58);	
+
+	for(int i = 64; i <= 90; i++)
+		table[i-64] = i;
+	for(int i = 97; i <= 122; i++)
+		table[i-64] = i-0x20;
+
+	return table;
+}
+
 static void toupper_simple(char * text) {
 	for(int i = 0; text[i] != '\0'; i++) {
 		if(text[i] > 0x5A) text[i] -= 0x20;
 	}
+}
+
+static void toupper_lookup(char * text) {
+
+	char* table = buildLookupTable();
+
+	for(int i = 0; text[i] != '\0'; i++) {
+		text[i] = table[text[i]-64];
+	}
+
+	free(table);
 }
 
 static void toupper_sse(char * text) {
@@ -51,7 +74,7 @@ static void toupper_sse(char * text) {
 
 	unsigned int iterations = textlen / 16;
 
-	//#pragma omp parallel for schedule(static, iterations/2) 
+	//#pragma omp parallel for schedule(static, iterations/4) 
 	for(int i = 0; i < iterations; i++)
 	{
 		void * address = (void*)text+(i*16);
@@ -186,6 +209,7 @@ struct _toupperversion {
 	toupperfunc func;
 } toupperversion[] = {
 	{ "simple",    toupper_simple },
+	{ "lookup", toupper_lookup },
 	{ "sse", toupper_sse },
 	{ "avx", toupper_avx },
 	{ "asm", toupper_asm },
