@@ -46,8 +46,8 @@ static char* buildLookupTable() {
 }
 
 static void toupper_simple(char * text) {
-	for(int i = 0; text[i] != '\0'; i++) {
-		if(text[i] > 0x5A) text[i] -= 0x20;
+	for(; *text != '\0'; text++) {
+		if(*text > 0x5A) *text -= 0x20;
 	}
 }
 
@@ -55,16 +55,16 @@ static void toupper_lookup(char * text) {
 
 	char* table = buildLookupTable();
 
-	for(int i = 0; text[i] != '\0'; i++) {
-		text[i] = table[text[i]-65];
+	for(; *text != '\0'; text++) {
+		*text = table[*text-65];
 	}
 
 	free(table);
 }
 
 static void toupper_lookupConst(char * text) {
-	for(int i = 0; text[i] != '\0'; i++) {
-		text[i] = lut[text[i]-65];
+	for(; *text != '\0'; text++) {
+		*text = lut[*text-65];
 	}
 }
 
@@ -85,15 +85,15 @@ static void toupper_sse(char * text) {
 	//#pragma omp parallel for schedule(static, iterations/4) 
 	for(int i = 0; i < iterations; i++)
 	{
-		void * address = (void*)text+(i*16);
-		simddataOld = _mm_load_si128(address);
+		simddataOld = _mm_load_si128((void*)text);
 		compresult = _mm_cmpgt_epi8(simddataOld, comparator);
 		simddataNew = _mm_sub_epi8(simddataOld, subtractor);
 		simddataNew = _mm_blendv_epi8(simddataOld, simddataNew, compresult);
-		_mm_store_si128(address, simddataNew);
+		_mm_store_si128((void*)text, simddataNew);
+		text += 16;
 	}
 
-	toupper_lookup((void*)text+iterations*16);
+	toupper_lookup(text);
 }
 
 static void toupper_avx(char * text) {
@@ -113,15 +113,15 @@ static void toupper_avx(char * text) {
 	//#pragma omp parallel for schedule(static, iterations/2) 
 	for(int i = 0; i < iterations; i++)
 	{
-		void * address = (void*)text+(i*32);
-		simddataOld = _mm256_load_si256(address);
+		simddataOld = _mm256_load_si256((void*)text);
 		compresult = _mm256_cmpgt_epi8(simddataOld, comparator);
 		simddataNew = _mm256_sub_epi8(simddataOld, subtractor);
 		simddataNew = _mm256_blendv_epi8(simddataOld, simddataNew, compresult);
-		_mm256_store_si256(address, simddataNew);
+		_mm256_store_si256((void*)text, simddataNew);
+		text += 32;
 	}
 
-	toupper_lookup((void*)text+iterations*32);
+	toupper_lookup(text);
 }
 
 static void toupper_asm(char * text) {
