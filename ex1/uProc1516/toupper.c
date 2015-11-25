@@ -5,6 +5,7 @@
 #include <sys/time.h>
 #include <nmmintrin.h>
 #include <immintrin.h>
+#include <mmintrin.h>
 #include "options.h"
 
 int debug = 0;
@@ -68,6 +69,39 @@ static void toupper_lookupConst(char * text) {
 	}
 }
 
+static void toupper_mmx(char * text) {
+	__m64 simddataOld;
+	__m64 simddataNew;
+	__m64 comparator;
+	__m64 compresult;
+	__m64 subtractor;
+    __m64 ones;
+
+	comparator = _mm_set1_pi8(0x5A);
+	subtractor = _mm_set1_pi8(0x20);
+    ones = _mm_set1_pi8(0xFF);
+
+	unsigned int textlen = strlen(text);
+
+	unsigned int iterations = textlen / 8;
+
+	//#pragma omp parallel for schedule(static, iterations/4) 
+	for(int i = 0; i < iterations; i++)
+	{
+		simddataOld = *(__m64*)text;
+		compresult = _mm_cmpgt_pi8(simddataOld, comparator);
+		simddataNew = _mm_sub_pi8(simddataOld, subtractor);
+        simddataNew = _mm_and_si64(simddataNew, compresult);
+        compresult = _m_pxor(compresult, ones);
+        simddataOld = _mm_and_si64(simddataOld, compresult);
+        simddataNew = _mm_add_pi8(simddataNew, simddataOld);
+		*(__m64*)text =  simddataNew;
+		text += 8;
+	}
+
+	toupper_lookup(text);
+}
+
 static void toupper_sse(char * text) {
 	__m128i simddataOld;
 	__m128i simddataNew;
@@ -96,6 +130,7 @@ static void toupper_sse(char * text) {
 	toupper_lookup(text);
 }
 
+#ifdef __AVX2__
 static void toupper_avx(char * text) {
 	__m256i simddataOld;
 	__m256i simddataNew;
@@ -123,6 +158,7 @@ static void toupper_avx(char * text) {
 
 	toupper_lookup(text);
 }
+#endif
 
 static void toupper_asm(char * text) {
 	__asm__ __volatile__ (
@@ -219,8 +255,11 @@ struct _toupperversion {
 	{ "simple",    toupper_simple },
 	{ "lookup", toupper_lookup },
 	{ "lookupConst", toupper_lookupConst },
+    { "mmx", toupper_mmx },
 	{ "sse", toupper_sse },
+#ifdef __AVX2__
 	{ "avx", toupper_avx },
+#endif
 	{ "asm", toupper_asm },
 	{ 0, 0 }
 };
