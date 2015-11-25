@@ -75,11 +75,11 @@ static void toupper_mmx(char * text) {
 	__m64 comparator;
 	__m64 compresult;
 	__m64 subtractor;
-    __m64 ones;
+	__m64 ones;
 
 	comparator = _mm_set1_pi8(0x5A);
 	subtractor = _mm_set1_pi8(0x20);
-    ones = _mm_set1_pi8(0xFF);
+	ones = _mm_set1_pi8(0xFF);
 
 	unsigned int textlen = strlen(text);
 
@@ -91,10 +91,10 @@ static void toupper_mmx(char * text) {
 		simddataOld = *(__m64*)text;
 		compresult = _mm_cmpgt_pi8(simddataOld, comparator);
 		simddataNew = _mm_sub_pi8(simddataOld, subtractor);
-        simddataNew = _mm_and_si64(simddataNew, compresult);
-        compresult = _m_pxor(compresult, ones);
-        simddataOld = _mm_and_si64(simddataOld, compresult);
-        simddataNew = _mm_add_pi8(simddataNew, simddataOld);
+		simddataNew = _mm_and_si64(simddataNew, compresult);
+		compresult = _m_pxor(compresult, ones);
+		simddataOld = _mm_and_si64(simddataOld, compresult);
+		simddataNew = _mm_add_pi8(simddataNew, simddataOld);
 		*(__m64*)text =  simddataNew;
 		text += 8;
 	}
@@ -255,7 +255,7 @@ struct _toupperversion {
 	{ "simple",    toupper_simple },
 	{ "lookup", toupper_lookup },
 	{ "lookupConst", toupper_lookupConst },
-    { "mmx", toupper_mmx },
+	{ "mmx", toupper_mmx },
 	{ "sse", toupper_sse },
 #ifdef __AVX2__
 	{ "avx", toupper_avx },
