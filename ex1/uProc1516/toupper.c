@@ -160,6 +160,34 @@ static void toupper_avx(char * text) {
 }
 #endif
 
+#if defined(__AVX512F__) && defined(__AVX512BW__)
+static void toupper_avx512(char * text) {
+	__m512i simddata;
+	__m512i comparator;
+	__mmask64 compresult;
+	__m512i subtractor;
+
+	comparator = _mm512_set1_epi8(0x5A);
+	subtractor = _mm512_set1_epi8(0x20);
+
+	unsigned int textlen = strlen(text);
+
+	unsigned int iterations = textlen / 64;
+
+	//#pragma omp parallel for schedule(static, iterations/2) 
+	for(int i = 0; i < iterations; i++)
+	{
+		simddata = _mm512_load_si512((void*)text);
+		compresult = _mm512_cmpgt_epi8_mask(simddata, comparator);
+		simddata = _mm512_mask_sub_epi8(simddata, compresult, simddata, subtractor);
+		_mm512_store_si512((void*)text, simddata);
+		text += 64;
+	}
+
+	toupper_lookup(text);
+}
+#endif
+
 static void toupper_asm(char * text) {
 	__asm__ __volatile__ (
 			"movq $0, %%rsi\n\t"                // init rsi with 0 (offset of address)
@@ -253,6 +281,7 @@ struct _toupperversion {
 	toupperfunc func;
 } toupperversion[] = {
 	{ "simple",    toupper_simple },
+	{ "asm", toupper_asm },
 	{ "lookup", toupper_lookup },
 	{ "lookupConst", toupper_lookupConst },
 	{ "mmx", toupper_mmx },
@@ -260,7 +289,9 @@ struct _toupperversion {
 #ifdef __AVX2__
 	{ "avx", toupper_avx },
 #endif
-	{ "asm", toupper_asm },
+#if defined(__AVX512F__) && defined(__AVX512BW__)
+	{ "avx512", toupper_avx512 },
+#endif
 	{ 0, 0 }
 };
 
