@@ -10,9 +10,9 @@ $(PROGRAM): $(OBJECTS)
 	$(CC) -o $(PROGRAM) $(OBJECTS)
 	
 %.o: %.c
-	%(CC) -c $(CFLAGS) $<
+	$(CC) -c $(CFLAGS) $<
 
 .PHONY: clean
 clean:
-	rm -f *.o
+	rm -f *.o $(PROGRAM)
 
