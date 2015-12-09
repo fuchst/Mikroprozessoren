@@ -1,9 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <float.h>
+#include <math.h>
 
 const int n = 4096 * 1024;
-const int stride = 1024;
+
+// New stride calculated by stride = stride * strideScale
+int stride = 1;
+const int strideScale = 2;
+
+// Number of test iterations for each stride
+const int iterations = 10;
 
 //  Allocate memory of size size
 static 
@@ -18,39 +26,81 @@ int* ivalloc(int value, size_t num, size_t size) {
 	return ret;
 }
 
-static inline
+static 
 double gettimediff(struct timespec end, struct timespec start) {
 	double ret = end.tv_sec + (double)end.tv_nsec/1000000000.0 - start.tv_sec - (double)start.tv_nsec/1000000000.0;
 
 	return ret;
 }
 
+static 
+double findMinimum(double* values, size_t size) {	
+	double ret = DBL_MAX;
+
+	for(int i = 0; i < size; i++) 
+	{
+		ret = (ret > values[i]) ? values[i] : ret;	
+	}
+
+	return ret;
+}
+
+struct result {
+	int stride;
+	double time;
+};
 
 int main(int argc, char* argv[]) 
 {
 	int* array = (int*)ivalloc(1, n, sizeof(int));
 
-	int dummy = 0;
+	int cycles = (int)floor(log((double)n/(double)stride)/log((double)strideScale));
 
 	struct timespec start;
 	struct timespec end;
 
-	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
+	// Store values of iterations to later determine minimum
+        double iterationResults[iterations];
 
-	for(int i = n-1; i >= 0; i -= stride) 
+	// Store final results
+	struct result results[cycles];
+
+	for(int k = 0; k < cycles; k++)
 	{
-		dummy += array[i];
-	} 
+		for(int i = 0; i < iterations; i++)
+		{
+			int count = 0;
 
-	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end);
+			clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
 
-	double t = gettimediff(end, start);
+			for(int j = 0; j < n; j += stride) 
+			{
+				count += array[j];
+			} 
 
-	printf("Values read: %d\n", dummy);
+			clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end);
 
-	printf("Time per element: %2.9f\n", t / dummy);
+			iterationResults[i] = gettimediff(end, start) / (double)count;
+		}
 
-	printf("Total time: %2.9f\n", t); 
+		struct result temp;
+		temp.stride = stride;
+		temp.time = findMinimum(iterationResults, iterations);
+
+		results[k] = temp;
+
+		stride *= strideScale;
+	}
+
+	for(int i = 0; i < cycles; i++) {
+		printf("Stride: %d Time: %2.9f\n", results[i].stride, results[i].time);
+	}
+
+	//printf("Values read: %d\n", dummy);
+
+	//printf("Time per element: %2.9f\n", t / dummy);
+
+	//printf("Total time: %2.9f\n", t); 
 
 	free(array);
 	

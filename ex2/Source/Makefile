@@ -4,10 +4,11 @@ PROGRAM = cacheline
 SHELL  	= /bin/bash
 CC 		= gcc
 OBJECTS = $(PROGRAM).o
-CFLAGS 	= -lm -march=native -O0
+CFLAGS 	= -march=native -O0
+LDFLAGS = -lm
 
 $(PROGRAM): $(OBJECTS)
-	$(CC) -o $(PROGRAM) $(OBJECTS)
+	$(CC) -o $(PROGRAM) $(OBJECTS) $(LDFLAGS)
 	
 %.o: %.c
 	$(CC) -c $(CFLAGS) $<
