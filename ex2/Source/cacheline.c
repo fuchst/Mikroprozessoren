@@ -48,12 +48,15 @@ double findMinimum(double* values, size_t size) {
 
 static 
 void clearCacheRange(int* start, int* end) {
+
+	_mm_lfence();
+
 	while(start <= end)
 	{
 		_mm_clflush(start++);
 	}
 
-	_mm_sfence();
+	_mm_mfence();
 }
 
 struct result {
