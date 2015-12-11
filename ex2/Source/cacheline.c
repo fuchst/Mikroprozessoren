@@ -3,6 +3,7 @@
 #include <time.h>
 #include <float.h>
 #include <math.h>
+#include <emmintrin.h>
 
 const int n = 4096 * 1024;
 
@@ -45,6 +46,16 @@ double findMinimum(double* values, size_t size) {
 	return ret;
 }
 
+static 
+void clearCacheRange(int* start, int* end) {
+	while(start <= end)
+	{
+		_mm_clflush(start++);
+	}
+
+	_mm_sfence();
+}
+
 struct result {
 	int stride;
 	double time;
@@ -69,16 +80,19 @@ int main(int argc, char* argv[])
 	{
 		for(int i = 0; i < iterations; i++)
 		{
+			// Flush data cache
+			clearCacheRange(&array[0], &array[n-1]);
+
 			int count = 0;
 
-			clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
+			clock_gettime(CLOCK_MONOTONIC_RAW, &start);
 
 			for(int j = 0; j < n; j += stride) 
 			{
 				count += array[j];
 			} 
 
-			clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end);
+			clock_gettime(CLOCK_MONOTONIC_RAW, &end);
 
 			iterationResults[i] = gettimediff(end, start) / (double)count;
 		}
@@ -95,12 +109,6 @@ int main(int argc, char* argv[])
 	for(int i = 0; i < cycles; i++) {
 		printf("Stride: %d Time: %2.9f\n", results[i].stride, results[i].time);
 	}
-
-	//printf("Values read: %d\n", dummy);
-
-	//printf("Time per element: %2.9f\n", t / dummy);
-
-	//printf("Total time: %2.9f\n", t); 
 
 	free(array);
 	

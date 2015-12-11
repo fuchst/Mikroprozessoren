@@ -5,7 +5,7 @@ SHELL  	= /bin/bash
 CC 		= gcc
 OBJECTS = $(PROGRAM).o
 CFLAGS 	= -march=native -O0
-LDFLAGS = -lm
+LDFLAGS = -lm -lrt
 
 $(PROGRAM): $(OBJECTS)
 	$(CC) -o $(PROGRAM) $(OBJECTS) $(LDFLAGS)
