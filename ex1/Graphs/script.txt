@@ -1,0 +1,3 @@
+set terminal png
+set output "plot2.png"
+plot 'results2' using 2:8 title 'simple' with linespoints lc rgb "red", '' using 2:10 title 'asm' with linespoints lc rgb "yellow", '' using 2:12 title 'lookup' with linespoints lc rgb "green", '' using 2:14 title 'lookupConst' with linespoints lc rgb "brown", '' using 2:16 title 'mmx' with linespoints lc rgb "blue", '' using 2:18 title 'sse' with linespoints lc rgb "black", '' using 2:20 title 'avx' with linespoints lc rgb "orange"
