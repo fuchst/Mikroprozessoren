@@ -1,0 +1,4 @@
+set terminal png
+set output outputname
+set logscale y 10
+plot filename using 1:2 title 'simple' with linespoints lc rgb "blue"
