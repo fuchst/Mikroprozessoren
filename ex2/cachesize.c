@@ -13,14 +13,14 @@ typedef struct memBlock{
 	char memArray[56];
 }mBlock;
 
-static 
+static
 double gettimediff(struct timespec end, struct timespec start) {
-	double ret = end.tv_sec + (double)end.tv_nsec/1000000000.0 - start.tv_sec - (double)start.tv_nsec/1000000000.0;
-
-	return ret;
+	double a = end.tv_sec + (double)end.tv_nsec/1000000000.0;
+    double b = start.tv_sec + (double)start.tv_nsec/1000000000.0;
+	return a-b;
 }
 
-static 
+static
 mBlock* initArray(int numBlocks) {
 	//printf("size of one block: %d", sizeof(mBlock));
 	mBlock* ret = (mBlock*)malloc(numBlocks*sizeof(mBlock));
@@ -33,20 +33,20 @@ mBlock* initArray(int numBlocks) {
 	return ret;
 }
 
-static 
-void doMeasure(int N, mBlock* block){
-	int acc = block[0].addr;
+static
+void doMeasure(mBlock* block){
+	uint64_t addr = block[0].addr;
 	int i = 0;
 	for(; i<1000000; i++){
-			acc = block[acc].addr;
+			addr = block[addr].addr;
 	}
 }
 
 static void doNAccess(int N, mBlock* block){
-	int acc = block[0].addr;
+	uint64_t addr = block[0].addr;
 	int i = 0;
 	for(; i<N; i++){
-			acc = block[acc].addr;
+			addr = block[addr].addr;
 	}
 }
 
@@ -62,9 +62,8 @@ int main(int argc, char* argv[])
 	struct timespec end;
 	int N = 1;
 	int i = 0;
-	for(; i<10000; i++)
+	for(; i<15000; i++)
 	{
-			
 		int res = gcdr(N, stride);
 		if(res == 1)
 		{
@@ -74,11 +73,12 @@ int main(int argc, char* argv[])
 			//do N accesses beforehand
 			doNAccess(N, block);
 			clock_gettime(CLOCK_MONOTONIC_RAW, &start);
-			doMeasure(N, block);
+			doMeasure(block);
 			clock_gettime(CLOCK_MONOTONIC_RAW, &end);
-			double result = gettimediff(end, start) / (double)1000000;
-			printf("Result with %d Byte: %2.9f\n", N*64, result); 
-			printf("%d\n", N);
+			double result = gettimediff(end, start); // / (double)1000000;
+            printf("%d %f\n", N*64, result);
+			//printf("Result with %d Bytes: %2.9f\n", N*64, result); 
+			//printf("%d\n", N);
 			free(block);
 		}
 		N = N + 10;
