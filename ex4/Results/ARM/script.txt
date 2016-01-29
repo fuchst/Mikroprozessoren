@@ -1,0 +1,7 @@
+set terminal png
+set title "toupper ARM -O3"
+set xlabel "Size [byte]"
+set ylabel "Time [sec]"
+set yr [0:0.9]
+set output "plot4.png"
+plot 'results4' using 2:8 title 'simple' with linespoints lc rgb "red", '' using 2:10 title 'lookup' with linespoints lc rgb "green", '' using 2:12 title 'lookupConst' with linespoints lc rgb "brown", '' using 2:14 title 'neon' with linespoints lc rgb "orange"
